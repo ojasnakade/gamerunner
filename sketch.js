@@ -1,223 +1,161 @@
-var PLAY = 1;
-var END = 0;
-var gameState = PLAY;
+var sword,swordImage,fruitGroup,enemyGroup,enemy,fruit,enemyImage;
 
-var trex, trex_running, trex_collided;
-var ground, invisibleGround, groundImage;
-
-var cloudsGroup, cloudImage;
-var obstaclesGroup, obstacle1, obstacle2, obstacle3, obstacle4, obstacle5, obstacle6;
-
-var score;
-var gameOverImg,restartImg
-var jumpSound , checkPointSound, dieSound
-
+var PLAY=1;
+var END=0;
+var gameState=1;
+var knifeSwooshSound , gameoverSound ;
+var score
 function preload(){
-  trex_running = loadAnimation("trex1.png","trex3.png","trex4.png");
-  trex_collided = loadAnimation("trex_collided.png");
+  swordImage=loadImage("sword.png");
+  gameoverImage=loadImage("gameover.png")
+  fruit1=loadImage("fruit1.png");
+  fruit2=loadImage("fruit2.png");
+  fruit3=loadImage("fruit3.png");
+  fruit4=loadImage("fruit4.png");
+  enemy=loadAnimation("alien1.png","alien2.png");
+  //enemyImage=loadImage("alien1.png");
   
-  groundImage = loadImage("ground2.png");
-  
-  cloudImage = loadImage("cloud.png");
-  
-  obstacle1 = loadImage("obstacle1.png");
-  obstacle2 = loadImage("obstacle2.png");
-  obstacle3 = loadImage("obstacle3.png");
-  obstacle4 = loadImage("obstacle4.png");
-  obstacle5 = loadImage("obstacle5.png");
-  obstacle6 = loadImage("obstacle6.png");
-  
-  restartImg = loadImage("restart.png")
-  gameOverImg = loadImage("gameOver.png")
-  
-  jumpSound = loadSound("jump.mp3")
-  dieSound = loadSound("die.mp3")
-  checkPointSound = loadSound("checkPoint.mp3")
+  knifeSwooshSound = loadSound("knifeSwooshSound.mp3");
+  gameoverSound = loadSound("gameover.mp3");
 }
 
-function setup() {
-  createCanvas(600, 200);
 
-  var message = "This is a message";
- console.log(message)
-  
-  trex = createSprite(50,160,20,50);
-  trex.addAnimation("running", trex_running);
-  trex.addAnimation("collided", trex_collided);
-  
 
-  trex.scale = 0.5;
+function setup(){
   
-  ground = createSprite(200,180,400,20);
-  ground.addImage("ground",groundImage);
-  ground.x = ground.width /2;
+  createCanvas(400,400);
   
-  gameOver = createSprite(300,100);
-  gameOver.addImage(gameOverImg);
-  
-  restart = createSprite(300,140);
-  restart.addImage(restartImg);
-  
- 
-  gameOver.scale = 0.5;
-  restart.scale = 0.5;
-  
-  invisibleGround = createSprite(200,190,400,10);
-  invisibleGround.visible = false;
-  
-  //create Obstacle and Cloud Groups
-  obstaclesGroup = createGroup();
-  cloudsGroup = createGroup();
+  sword=createSprite(200,200,20,20);
+  sword.addImage(swordImage);
+  sword.scale=0.7;
 
   
-  trex.setCollider("rectangle",0,0,trex.width,trex.height);
-  //trex.debug = true
   
-  score = 0;
-  
+  enemyGroup = createGroup();
+  fruitGroup = createGroup();
+
+ score = 0;
+
+
 }
 
-function draw() {
+
+
+
+
+
+
+
+function draw(){
   
-  background(255);
-  //displaying score
-  text("Score: "+ score, 500,50);
+  background("lightblue");
+  
+  text("Score: "+ score, 300,50);
+  
+  
+  sword.y=World.mouseY;
+  sword.x=World.mouseX;
+    
+  
   
   
   if(gameState === PLAY){
+    //move the ground
+    //sword=createSprite(200,200,20,20);
+  //sword.addImage(swordImage);
+  //sword.scale=0.7;
+    
+   // sword.y=World.mouseY;
+ // sword.x=World.mouseX;
 
-    gameOver.visible = false;
-    restart.visible = false;
-    
-    ground.velocityX = -(4 + 3* score/100)
-    //scoring
-    score = score + Math.round(getFrameRate()/60);
-    
-    if(score>0 && score%100 === 0){
-       checkPointSound.play() 
-    }
-    
-    if (ground.x < 0){
-      ground.x = ground.width/2;
-    }
-    
-    //jump when the space key is pressed
-    if(keyDown("space")&& trex.y >= 100) {
-        trex.velocityY = -12;
-        jumpSound.play();
-    }
-    
-    //add gravity
-    trex.velocityY = trex.velocityY + 0.8
   
-    //spawn the clouds
-    spawnClouds();
-  
-    //spawn obstacles on the ground
-    spawnObstacles();
+    if(fruitGroup.isTouching(sword)){
+    fruitGroup.destroyEach();
     
-    if(obstaclesGroup.isTouching(trex)){
-        //trex.velocityY = -12;
-        //jumpSound.play();
-        gameState = END;
-        dieSound.play()
-      
-    }
+    knifeSwooshSound.play();
+    score=score+2;
   }
+  
+    
+   fruits();
+   Enemy();
+  
+    
+    if(enemyGroup.isTouching(sword)){
+   gameState = END;
+   gameoverSound.play();   
+    }
+}
    else if (gameState === END) {
-      gameOver.visible = true;
-      restart.visible = true;
-     
-     //change the trex animation
-      trex.changeAnimation("collided", trex_collided);
-    
-     
-     
-      ground.velocityX = 0;
-      trex.velocityY = 0
       
-     
-      //set lifetime of the game objects so that they are never destroyed
-    obstaclesGroup.setLifetimeEach(-1);
-    cloudsGroup.setLifetimeEach(-1);
-     
-     obstaclesGroup.setVelocityXEach(0);
-     cloudsGroup.setVelocityXEach(0);
-     
-     if(mousePressedOver(restart)){
-       reset();
-     }
-   }
+      sword.addImage(gameoverImage);
+      monster.destroy();
+    fruit.destroy();
+   
   
- 
-  //stop trex from falling down
-  trex.collide(invisibleGround);
+    fruitGroup.setVelocityXEach(0);
+    enemyGroup.setVelocityXEach(0);
+     
+     sword.x=200;
+     sword.y=200;
+  }
+     
+     
   
-  
-    
-
   drawSprites();
+
+  
+  
+  
 }
 
-function reset(){
-  gameState = PLAY;
-  obstaclesGroup.destroyEach();
-  cloudsGroup.destroyEach();
-  score = 0;
-  trex.changeAnimation("running", trex_running);
-}
-
-
-function spawnObstacles(){
- if (frameCount % 60 === 0){
-   var obstacle = createSprite(600,165,10,40);
-   obstacle.velocityX = -(6 + score/100);
-   
-    //generate random obstacles
-    var rand = Math.round(random(1,6));
-    switch(rand) {
-      case 1: obstacle.addImage(obstacle1);
-              break;
-      case 2: obstacle.addImage(obstacle2);
-              break;
-      case 3: obstacle.addImage(obstacle3);
-              break;
-      case 4: obstacle.addImage(obstacle4);
-              break;
-      case 5: obstacle.addImage(obstacle5);
-              break;
-      case 6: obstacle.addImage(obstacle6);
-              break;
-      default: break;
-    }
-   
-    //assign scale and lifetime to the obstacle           
-    obstacle.scale = 0.5;
-    obstacle.lifetime = 300;
-   
-   //add each obstacle to the group
-    obstaclesGroup.add(obstacle);
- }
-}
-
-function spawnClouds() {
-  //write code here to spawn the clouds
-  if (frameCount % 60 === 0) {
-    var cloud = createSprite(600,120,40,10);
-    cloud.y = Math.round(random(80,120));
-    cloud.addImage(cloudImage);
-    cloud.scale = 0.5;
-    cloud.velocityX = -3;
+function fruits(){
+  if(World.frameCount%80===0){
+  fruit=createSprite(400,200,20,20);
+  fruit.scale=0.2;
+  r=Math.round(random(1,4));
+  if (r == 1){
+    fruit.addImage(fruit1);
+   } else if (r == 2){
+     fruit.addImage(fruit2);
+   } else if (r == 3){
+     fruit.addImage(fruit3);
+   } else if (r == 4){
+     fruit.addImage(fruit4);
+   }
     
-     //assign lifetime to the variable
-    cloud.lifetime = 200;
+   fruit.y=Math.round(random(50,340));
+   
+   position = Math.round(random(1,2));
     
-    //adjust the depth
-    cloud.depth = trex.depth;
-    trex.depth = trex.depth + 1;
+   if(position==1)
+   {
+     fruit.x=400;
+     fruit.velocityX=-(7+(score/4));
+   }  
+   else
+   {
+     if(position==2){
+       fruit.x=0;
+       fruit.velocityX=(7+(score/4));
+     }
+   }  
     
-    //add each cloud to the group
-    cloudsGroup.add(cloud);
+   //fruit.velocityX=-7;
+   fruit.setLifetime=100;
+    
+   fruitGroup.add(fruit);
   }
 }
 
+function Enemy(){
+  if(World.frameCount%200===0) {
+    monster=createSprite(400,200,20,20);
+    monster.addAnimation("monster",enemy);
+    monster.y=Math.round(random(100,300));
+    monster.setLifetime=50;
+    monster.velocityX=-(8+(score/10));
+    
+    enemyGroup.add(monster);
+  } 
+ }
